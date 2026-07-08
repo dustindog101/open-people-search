@@ -1,48 +1,73 @@
 # Open People Search
 
-A free, open people-search aggregator that finds friends using public information from multiple sources — with every cached fact attributed to its source.
+A free, open people-search aggregator that finds people using public information from multiple sources — with every cached fact attributed to its source.
 
-> **Status:** Phase 0 (spec handoff). Application code starts in Phase 1.
+## Features
 
-## Goals
+- **Multi-source search** — Queries TruePeopleSearch, FastPeopleSearch, and FamilyTreeNow in parallel
+- **Source attribution** — Every fact (phone, email, address, relatives) is tagged with its original source
+- **Deduplication** — Results from multiple sources are merged and deduplicated automatically
+- **Rate limiting** — Built-in rate limiting to prevent abuse
+- **Opt-out / Data removal** — Compliance page for requesting data removal (CCPA-ready)
+- **Free to run** — Designed for free-tier hosting (Vercel)
 
-- Truly free people search (no paywalls on our side)
-- Query multiple public sources in parallel
-- Build our own database from search hits (append-only, source-attributed)
-- Run on free tiers: Vercel + Neon + Upstash + Railway
-
-## For implementers
-
-Read **[AGENTS.md](AGENTS.md)** first.
-
-## Architecture (summary)
+## Architecture
 
 ```
 User → Vercel (Next.js API + UI)
-         ├── Neon Postgres (cached facts)
-         ├── Upstash Redis (rate limits, job state)
-         └── Railway (Patchright scraper worker)
-                ├── TruePeopleSearch
-                ├── FastPeopleSearch
-                └── FamilyTreeNow
+         ├── SQLite (cached facts, via Prisma)
+         └── Scrapers (TruePeopleSearch, FastPeopleSearch, FamilyTreeNow)
 ```
 
-## Docs
+## Tech Stack
 
-| Doc | Description |
-|-----|-------------|
-| [docs/PLAN.md](docs/PLAN.md) | Full implementation plan |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design |
-| [docs/DATABASE.md](docs/DATABASE.md) | Schema and upsert rules |
-| [docs/SOURCES.md](docs/SOURCES.md) | Per-source parsing notes |
-| [docs/API.md](docs/API.md) | REST API contracts |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deploy guide |
-| [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | Privacy/CCPA hooks |
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS 4 + shadcn/ui
+- **Database**: SQLite via Prisma ORM
+- **Deployment**: Vercel
+
+## Getting Started
+
+```bash
+# Install dependencies
+pnpm install
+
+# Set up database
+cp .env.example .env
+pnpm db:push
+
+# Run development server
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## API
+
+### `POST /api/search`
+Search for people across all sources.
+
+**Body:**
+```json
+{
+  "firstName": "John",
+  "lastName": "Smith",
+  "city": "New York",
+  "state": "NY"
+}
+```
+
+### `GET /api/search?id=<searchId>`
+Retrieve cached search results.
+
+### `POST /api/opt-out`
+Submit a data removal request.
 
 ## Disclaimer
 
-Public information only. Not for FCRA/employment/credit/tenant screening. Legal review required before public launch.
+Public information only. Not for FCRA/employment/credit/tenant screening.
 
 ## License
 
-TBD — add before public launch.
+MIT

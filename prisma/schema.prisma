@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// For Vercel deployment, set DATABASE_URL="file:./dev.db"
+// For production with Neon Postgres, change provider to "postgresql"
+
+model Search {
+  id        String   @id @default(cuid())
+  query     String
+  city      String?
+  state     String?
+  status    String   @default("pending") // pending | running | completed | failed
+  resultCount Int    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  results PersonResult[]
+}
+
+model Person {
+  id        String   @id @default(cuid())
+  fullName  String
+  city      String?
+  state     String?
+  age       Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  facts   Fact[]
+  results PersonResult[]
+}
+
+model Fact {
+  id        String   @id @default(cuid())
+  personId  String
+  type      String   // phone | email | address | age | relatives | associates
+  value     String
+  source    String   // truepeoplesearch | fastpeoplesearch | familytreenow
+  sourceUrl String?
+  fetchedAt DateTime @default(now())
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId])
+  @@index([source])
+  @@index([type])
+}
+
+model PersonResult {
+  id        String @id @default(cuid())
+  searchId  String
+  personId  String
+  score     Float  @default(0)
+  createdAt DateTime @default(now())
+
+  search Search  @relation(fields: [searchId], references: [id], onDelete: Cascade)
+  person Person  @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([searchId, personId])
+  @@index([searchId])
+}
+
+model OptOutRequest {
+  id        String   @id @default(cuid())
+  fullName  String
+  email     String
+  reason    String?
+  status    String   @default("pending") // pending | processed | completed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
